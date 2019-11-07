@@ -16,43 +16,28 @@ function createMapper(sharedPath) {
     }
 }
 
-module.exports = {
-    webpack(config, env) {
-        var newConfig = {
-            ...config,
-            entry: [...config.entry],
-            module: {
-                ...config.module
-            },
-            resolve: {
-                ...config.resolve,
-                symlinks: true
-            }
-        };
-
-        if (newConfig.mode === 'development') {
-            const path = require('path');
-
-            const srcPath = newConfig.entry.find(entry => entry.indexOf('packages') >= 0 && entry.indexOf(path.join('src', 'index.ts')) >= 0);
-            const sharedPath = path.resolve(srcPath, '..', '..', '..', '..', 'shared');
-
-            newConfig.entry.splice(newConfig.entry.indexOf(srcPath), 0, sharedPath);
-            newConfig.module.rules = newConfig.module.rules.map(createMapper(sharedPath));
+module.exports = function (config) {
+    var newConfig = {
+        ...config,
+        entry: [...config.entry],
+        module: {
+            ...config.module
+        },
+        resolve: {
+            ...config.resolve,
+            symlinks: true
         }
+    };
 
-        return newConfig;
-    },
-    devServer(configFunction) {
-        return function (proxy, allowedHost) {
-            const config = configFunction(proxy, allowedHost);
-            config.watchOptions = {
-                aggregateTimeout: 300,
-                poll: 1000
-            };
-            console.log(config);
-            config.hot = false;
-            // config.liveReload = true;
-            return config;
-        };
+    if (newConfig.mode === 'development') {
+        const path = require('path');
+
+        const srcPath = newConfig.entry.find(entry => entry.indexOf('packages') >= 0 && entry.indexOf(path.join('src', 'index.ts')) >= 0);
+        const sharedPath = path.resolve(srcPath, '..', '..', '..', '..', 'shared');
+
+        newConfig.entry.splice(newConfig.entry.indexOf(srcPath), 0, sharedPath);
+        newConfig.module.rules = newConfig.module.rules.map(createMapper(sharedPath));
     }
+
+    return newConfig;
 };
